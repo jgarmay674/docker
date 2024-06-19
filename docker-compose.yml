@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # ***************************** ANGULAR *****************************
+  # Front-end Angular application
+  angular-app:
+    image: nginx:alpine # Usar Nginx como servidor web estático
+    volumes:
+      - ./angular-app/dist:/usr/share/nginx/html/  # Asegúrate de construir tu app Angular localmente y que los archivos estén en angular-app/dist
+    ports:
+      - "4200:80" # Exponer en el puerto 4200
+
+  # ***************************** APACHE ******************************
+  # Back-end PHP
+  php-api:
+    build:
+      context: ./php-app  # Ruta relativa al directorio que contiene tu Dockerfile
+      dockerfile: Dockerfile  # Nombre del archivo Dockerfile (opcional si el archivo se llama Dockerfile)
+    volumes:
+      - ./php-app:/var/www/html # Ruta a tu aplicación PHP
+    ports:
+      - "8080:80" # Exponer en el puerto 8080
+
+  # ***************************** FLASK *******************************
+  # Back-end Python (Flask)
+  flask-api:
+    image: python:3.8-slim
+    volumes:
+      - ./python-app:/app
+    working_dir: /app
+    command: >
+      sh -c "pip install -r requirements.txt && flask run --host=0.0.0.0"
+    ports:
+      - "5000:5000" # Exponer en el puerto 5000
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+
+  # **************************** NODEJS *******************************
+  # Back-end Node.js
+  nodejs-api:
+    image: node:14-alpine
+    volumes:
+      - ./nodejs-app:/app
+    working_dir: /app
+    command: sh -c "npm install && npm start"
+    ports:
+      - "3000:3000"  # Exponer en el puerto 3000
+
+  # **************************** LARAVEL *******************************
+  # Back-end Laravel
+
+  # ***************************** MYSQL *******************************
+  # MySQL
+  mysql-db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: dejame
+      # MYSQL_DATABASE: dbzDB # Esta línea ahora es opcional y puedes comentarla o eliminarla.
+    volumes:
+      - ./db/dbzDB.sql:/docker-entrypoint-initdb.d/dbzDB.sql  # Asegúrate de que la ruta al archivo SQL sea correcta.
+    ports:
+      - "3306:3306" # Opcional: solo si necesitas acceder a MySQL desde fuera del host de Docker
+
+    # ************************** PHPMYADMIN *****************************
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysql-db
+      PMA_USER: root
+      PMA_PASSWORD: dejame
+    ports:
+      - "8081:80" # Exponer en el puerto 8081
